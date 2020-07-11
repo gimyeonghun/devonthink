@@ -9,28 +9,18 @@ tell application id "DNtp"
 	
 	try
 		set invalid to false
-		set options to {"RTF", "MD", "Cancel"}
 		set options2 to {"Links", "Links and aliases", "Cancel"}
 		set options3 to {"Auto Wiki Links", "Without Auto Wiki Links", "Cancel"}
-		set answer to the button returned of (display dialog "Should the links be in RTF or MD?" buttons the options default button 2)
 		
-		if answer is "RTF" then
-			set RTFLinks to true
-			set answer2 to the button returned of (display dialog "Should the search include aliases?
+		
+		set RTFLinks to false
+		set answer2 to the button returned of (display dialog "Should the search include aliases?
 
 NOTE: without aliases, the search command (?search=name) will be added to the link" buttons the options2 default button 2)
-			set answer3 to ""
-			
-		else
-			set RTFLinks to false
-			set answer2 to the button returned of (display dialog "Should the search include aliases?
-
-NOTE: without aliases, the search command (?search=name) will be added to the link" buttons the options2 default button 2)
-			set answer3 to the button returned of (display dialog "Are you using Auto Wiki Links?
+		set answer3 to the button returned of (display dialog "Are you using Auto Wiki Links?
 
 NOTE: with auto wiki links ON, there is no need for x-devonthink URLs" buttons the options3 default button 1)
-			
-		end if
+		
 		
 		
 		if answer2 is "Links and aliases" then
@@ -129,7 +119,8 @@ NOTE: with auto wiki links ON, there is no need for x-devonthink URLs" buttons t
 					set the end of theList to name of each & " | "
 				else
 					-- Without AutoWikiLinks, we need the full address
-					set the end of theList to "[" & name of each & "]" & "(" & reference URL of each & ")" & " | "
+					set the end of theList to "- [" & name of each & "]" & "(" & reference URL of each & "?search=" & name of theRecord & ")" & "
+"
 					--set the end of theList to return & "* [" & name of each & "]" & "(" & reference URL of each & ")"
 				end if
 				
@@ -142,7 +133,7 @@ NOTE: with auto wiki links ON, there is no need for x-devonthink URLs" buttons t
 		-- Remove old Returnlinks section
 		try
 			set oldDelims to AppleScript's text item delimiters -- salvar o delimitador padr‹o
-			set AppleScript's text item delimiters to {"# Return links"} -- declarar delimitador novo
+			set AppleScript's text item delimiters to {"## Back links"} -- declarar delimitador novo
 			set delimitedList to every text item of theText
 			set AppleScript's text item delimiters to oldDelims -- restaurar delimitador padr‹o
 		on error
@@ -157,7 +148,7 @@ NOTE: with auto wiki links ON, there is no need for x-devonthink URLs" buttons t
 			
 			set the plain text of theRecord to theText & "
 
-# Return links" & return & theList as text
+## Back links" & return & theList as text
 		end try
 		
 		
