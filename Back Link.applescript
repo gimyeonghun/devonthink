@@ -7,10 +7,6 @@ tell application id "DNtp"
 	try
 		set invalid to false
 		
-		set RTFLinks to false
-		set UseAliases to false
-		set AutoWikiLinks to false
-		
 	on error error_message number error_number
 		set invalid to true
 		if invalid then error "Error"
@@ -32,7 +28,7 @@ tell application id "DNtp"
 "
 	end repeat
 	set theList to my sortlist(theList)
-	
+			
 	-- Remove old Returnlinks section
 	try
 		set oldDelims to AppleScript's text item delimiters
