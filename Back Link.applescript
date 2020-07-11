@@ -1,7 +1,4 @@
-use AppleScript version "2.4" -- Yosemite (10.10) or later
-use script "RegexAndStuffLib"
 use scripting additions
-
 
 property MainUUID : ""
 
@@ -9,159 +6,53 @@ tell application id "DNtp"
 	
 	try
 		set invalid to false
-		set options2 to {"Links", "Links and aliases", "Cancel"}
-		set options3 to {"Auto Wiki Links", "Without Auto Wiki Links", "Cancel"}
-		
 		
 		set RTFLinks to false
-		set answer2 to the button returned of (display dialog "Should the search include aliases?
-
-NOTE: without aliases, the search command (?search=name) will be added to the link" buttons the options2 default button 2)
-		set answer3 to the button returned of (display dialog "Are you using Auto Wiki Links?
-
-NOTE: with auto wiki links ON, there is no need for x-devonthink URLs" buttons the options3 default button 1)
-		
-		
-		
-		if answer2 is "Links and aliases" then
-			set UseAliases to true
-		else
-			set UseAliases to false
-		end if
-		
-		
-		if answer3 is "Auto Wiki Links" then
-			set AutoWikiLinks to true
-		else
-			set AutoWikiLinks to false
-		end if
+		set UseAliases to false
+		set AutoWikiLinks to false
 		
 	on error error_message number error_number
 		set invalid to true
 		if invalid then error "Error"
 	end try
 	
-	
 	set theRecord to (content record of think window 1)
 	set theText to plain text of theRecord
 	set theName to name of theRecord
 	
-	-- Prepare the search string
-	if UseAliases then
-		set theName2 to "(\"" & theName & "\")"
-		set theAliases to aliases of theRecord
-		set theAliases to my trimtext(theAliases, ", ", "end")
-		set theAliases to my replaceText(theAliases, ", ", "\") OR (\"")
-		set theSearchList to "(\"" & theAliases & "\")"
-		set theSearchList to theName2 & " OR " & "(\"" & theAliases & "\")"
-	else
-		
-		set theSearchList to "\"" & theName & "\""
-		
-	end if
-	
+	set theSearchList to "\"" & theName & "\""
 	
 	-- Perform the search
 	set theGroup to get record with uuid MainUUID
 	set theRecords to search "content:" & theSearchList & space & "kind:markdown" in theGroup
 	
-	if RTFLinks is true then
-		
-		set theList2 to {}
-		repeat with each in theRecords
-			
-			if UseAliases then
-				set the end of theList2 to return & quoted form of ("<font size=\"5\"><font face=\"Menlo\"><a href=\"" & reference URL of each & "\">" & name of each & "</a></font></font></br>")
-				
-			else
-				set theName to my replaceText(theName, " ", "%20")
-				set the end of theList2 to return & quoted form of ("<font size=\"5\"><font face=\"Menlo\"><a href=\"" & reference URL of each & "?search=" & theName & "\">" & name of each & " " & "</a></font></font> </br>")
-			end if
-		end repeat
-		
-		set theList2 to regex change theList2 search pattern "^.+" & name of theRecord & ".+" replace template "$1"
-		
-		set theList2 to my sortlist(theList2)
-		
-		set theRTF to (do shell script "echo " & theList2 & " | textutil -stdin -stdout -inputencoding utf-8 -format html -convert rtf | pbcopy")
-		set theRTF to the clipboard
-		
-		if UseAliases then
-			add custom meta data Çclass RTF È of theRTF for "return links with aliases" to theRecord
-			
-		else
-			add custom meta data Çclass RTF È of theRTF for "return links" to theRecord
-		end if
-		
-		
-		
-	else
-		
-		
-		set theList to {}
-		repeat with each in theRecords
-			
-			-- if aliases are being used, we can't add further commands to the URL (such "?search")
-			if UseAliases then
-				
-				-- if AutoWikiLinks is active, there is no need to add the x-devonthink address	
-				if AutoWikiLinks then
-					set the end of theList to name of each & " | "
-				else
-					-- Without AutoWikiLinks, we need the full address
-					set the end of theList to "[" & name of each & "]" & "(" & reference URL of each & ")" & " | "
-					--set the end of theList to return & "* [" & name of each & "]" & "(" & reference URL of each & ")"
-				end if
-				
-			else
-				
-				if AutoWikiLinks then
-					set the end of theList to name of each & " | "
-				else
-					-- Without AutoWikiLinks, we need the full address
-					set the end of theList to "- [" & name of each & "]" & "(" & reference URL of each & "?search=" & name of theRecord & ")" & "
+	set theList to {}
+	repeat with each in theRecords
+		set the end of theList to "- [" & name of each & "]" & "(" & reference URL of each & "?search=" & name of theRecord & ")" & "
 "
-					--set the end of theList to return & "* [" & name of each & "]" & "(" & reference URL of each & ")"
-				end if
-				
-			end if
-			
-		end repeat
-		set theList to my sortlist(theList)
-		
-		
-		-- Remove old Returnlinks section
-		try
-			set oldDelims to AppleScript's text item delimiters -- salvar o delimitador padr‹o
-			set AppleScript's text item delimiters to {"## Back links"} -- declarar delimitador novo
-			set delimitedList to every text item of theText
-			set AppleScript's text item delimiters to oldDelims -- restaurar delimitador padr‹o
-		on error
-			set AppleScript's text item delimiters to oldDelims -- restaurar delimitador padr‹o em caso de erro
-		end try
-		
-		-- Add new ReturnLinks section
-		try
-			set theText to item 1 of delimitedList
-			set theText to my trimtext(theText, "
+	end repeat
+	set theList to my sortlist(theList)
+	
+	-- Remove old Returnlinks section
+	try
+		set oldDelims to AppleScript's text item delimiters
+		set AppleScript's text item delimiters to {"## Back links"}
+		set delimitedList to every text item of theText
+		set AppleScript's text item delimiters to oldDelims
+	on error
+		set AppleScript's text item delimiters to oldDelims
+	end try
+	
+	-- Add new ReturnLinks section
+	try
+		set theText to item 1 of delimitedList
+		set theText to my trimtext(theText, "
 ", "end")
-			
-			set the plain text of theRecord to theText & "
+		set the plain text of theRecord to theText & "
 
 ## Back links" & return & theList as text
-		end try
-		
-		
-	end if
-	
-	
-	set answer to ""
-	set answer2 to ""
-	set answer3 to ""
-	
+	end try
 	display notification "Hooray! Success!"
-	
-	-- end repeat
 end tell
 
 
